@@ -1,11 +1,17 @@
 # react-native-rd-services
 
-scanning fingureprint data using rd services
+Reading finger print data using RD services
 
 ## Installation
 
 ```sh
 npm install react-native-rd-services
+```
+
+or using yarn
+
+```sh
+yarn add react-native-rd-services
 ```
 
 ## Usage
@@ -15,7 +21,12 @@ import RdServices from "react-native-rd-services";
 
 // ...
 
-const result = await RdServices.multiply(3, 7);
+RdServices.getFingerPrint("Mantra").then( (result)
+    {
+        console.log('Status', result.status);
+        console.log('Status', result.message);
+    }
+);
 ```
 
 ## Contributing
