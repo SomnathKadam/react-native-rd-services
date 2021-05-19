@@ -6,15 +6,21 @@ import RdServices from 'react-native-rd-services';
 interface ResponsePojo {
   status: string;
   message: string;
-   
 }
 
 export default function App() {
-  const [result, setResult] = React.useState<ResponsePojo | undefined>();
+  const [result, setResult] = React.useState<ResponsePojo>();
 
   React.useEffect(() => {
-    RdServices.getFingerPrint("Mantra").then(setResult);
+    RdServices.getFingerPrint('Mantra').then(setResult);
   }, []);
+
+  if (result === undefined)
+    return (
+      <View style={styles.container}>
+        <Text>Please wait</Text>
+      </View>
+    );
 
   return (
     <View style={styles.container}>
