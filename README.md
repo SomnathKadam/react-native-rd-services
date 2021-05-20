@@ -23,8 +23,12 @@ import RdServices from "react-native-rd-services";
 
 RdServices.getFingerPrint("Mantra").then( (result)
     {
-        console.log('Status', result.status);
-        console.log('Status', result.message);
+        console.log('result', result);
+        const { status, message } = JSON.parse(result);
+        console.log('Status', status);
+        console.log('Status', message);
+
+        
     }
 );
 ```

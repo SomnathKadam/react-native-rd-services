@@ -92,6 +92,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       currentActivity.startActivityForResult(intent, RDInfo);
     } catch (Exception e) {
       e.printStackTrace();
+      resolve(FAILURE, "RD services not available");
     }
   }
 
