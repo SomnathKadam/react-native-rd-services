@@ -1,11 +1,18 @@
 package com.reactnativerdservices;
 
+import android.app.Activity;
+import android.content.Intent;
+
 import androidx.annotation.NonNull;
+
+import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
+import com.google.gson.Gson;
 
 @ReactModule(name = RdServicesModule.NAME)
 public class RdServicesModule extends ReactContextBaseJavaModule {
@@ -17,6 +24,56 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
   private Promise promise;
   private String SUCCESS = "SUCCESS";
   private String FAILURE = "FAILURE";
+  private String CaptureData = "";
+
+  private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
+    @Override
+    public void onActivityResult(
+      Activity activity,
+      int requestCode,
+      int resultCode,
+      Intent data
+    ) {
+      if (data == null) {
+        resolve(FAILURE, "No action taken");
+        return;
+      }
+
+      if (requestCode == RDInfo) {
+        String requiredValue = data.getStringExtra("RD_SERVICE_INFO");
+
+        if (requiredValue == null) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        if (requiredValue.length() <= 10) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        if (requiredValue.toLowerCase().contains("notready")) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+
+        captureData();
+        return;
+      }
+
+      if (requestCode == RDCapture && !data.equals(null)) {
+        CaptureData = data.getStringExtra("PID_DATA");
+
+        if (CaptureData == null || CaptureData.length() <= 10) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        if (CaptureData.toLowerCase().contains("device not ready")) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        resolve(SUCCESS, CaptureData);
+      }
+    }
+  };
 
   public RdServicesModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -31,7 +88,8 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     try {
       Intent intent = new Intent();
       intent.setAction("in.gov.uidai.rdservice.fp.INFO");
-      startActivityForResult(intent, RDInfo);
+      Activity currentActivity = getCurrentActivity();
+      currentActivity.startActivityForResult(intent, RDInfo);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -64,47 +122,11 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       resolve(FAILURE, "RD services not available");
     }
 
-    startActivityForResult(intent, RDCapture);
+    Activity currentActivity = getCurrentActivity();
+
+    currentActivity.startActivityForResult(intent, RDCapture);
   }
 
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-
-    if (requestCode == RDInfo) {
-      String requiredValue = data.getStringExtra("RD_SERVICE_INFO");
-
-      if (requiredValue == null) {
-        resolve(FAILURE, "Device not ready");
-        return;
-      }
-      if (requiredValue.length() <= 10) {
-        resolve(FAILURE, "Device not ready");
-        return;
-      }
-      if (requiredValue.toLowerCase().contains("notready")) {
-        resolve(FAILURE, "Device not ready");
-        return;
-      }
-
-      captureData();
-      return;
-    }
-
-    if (requestCode == RDCapture && !data.equals(null)) {
-      CaptureData = data.getStringExtra("PID_DATA");
-
-      if (CaptureData == null || CaptureData.length() <= 10) {
-        resolve(FAILURE, "Device not ready");
-        return;
-      }
-      if (CaptureData.toLowerCase().contains("device not ready")) {
-        resolve(FAILURE, "Device not ready");
-        return;
-      }
-      resolve(SUCCESS, CaptureData);
-    }
-  }
 
   @ReactMethod
   public void getFingerPrint(String deviceName, Promise prm) {
