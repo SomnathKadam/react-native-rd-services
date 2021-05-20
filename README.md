@@ -1,6 +1,14 @@
 # react-native-rd-services
 
-Reading finger print data using RD services
+Reading finger print data using RD services in Android.
+
+RD service supported device :
+1. Morpho
+2. Mantra
+3. PB510
+4. SecuGen
+5. ACPL FM220
+6. Aratek A600
 
 ## Installation
 
