@@ -1,6 +1,6 @@
 {
   "name": "react-native-rd-services",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Reading finger print data using rd services in Android",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
