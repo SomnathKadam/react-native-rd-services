@@ -2,6 +2,7 @@ package com.reactnativerdservices;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -20,7 +21,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
   public static final String NAME = "RdServices";
   public static final int RDInfo = 1;
   public static final int RDCapture = 2;
-  private String devicePackageName = "";
+  private String PckName = "";
   private Promise promise;
   private String SUCCESS = "SUCCESS";
   private String FAILURE = "FAILURE";
@@ -77,6 +78,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
 
   public RdServicesModule(ReactApplicationContext reactContext) {
     super(reactContext);
+    reactContext.addActivityEventListener(mActivityEventListener);
   }
 
   @NonNull
@@ -89,7 +91,11 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       Intent intent = new Intent();
       intent.setAction("in.gov.uidai.rdservice.fp.INFO");
       Activity currentActivity = getCurrentActivity();
+
+      Log.i("Inside deviceInfo", "1");
+
       currentActivity.startActivityForResult(intent, RDInfo);
+
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "RD services not available");
@@ -103,24 +109,26 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     intent.setAction("in.gov.uidai.rdservice.fp.CAPTURE");
     intent.putExtra("PID_OPTIONS", pidOption);
 
-    if (devicePackageName.equalsIgnoreCase("com.scl.rdservice")) {
+    Log.i("Inside captureData", "1");
+
+    if (PckName.equalsIgnoreCase("com.scl.rdservice")) {
       intent.setPackage("com.scl.rdservice");
-    } else if (devicePackageName.equalsIgnoreCase("com.mantra.rdservice")) {
+    } else if (PckName.equalsIgnoreCase("com.mantra.rdservice")) {
       intent.setPackage("com.mantra.rdservice");
     } else if (
-      devicePackageName.equalsIgnoreCase("com.precision.pb510.rdservice")
+      PckName.equalsIgnoreCase("com.precision.pb510.rdservice")
     ) {
       intent.setPackage("com.precision.pb510.rdservice");
-    } else if (devicePackageName.equalsIgnoreCase("com.secugen.rdservice")) {
+    } else if (PckName.equalsIgnoreCase("com.secugen.rdservice")) {
       intent.setPackage("com.secugen.rdservice");
-    } else if (devicePackageName.equalsIgnoreCase("com.acpl.registersdk")) {
+    } else if (PckName.equalsIgnoreCase("com.acpl.registersdk")) {
       intent.setPackage("com.acpl.registersdk");
     } else if (
-      devicePackageName.equalsIgnoreCase("co.aratek.asix_gms.rdservice")
+      PckName.equalsIgnoreCase("co.aratek.asix_gms.rdservice")
     ) {
       intent.setPackage("co.aratek.asix_gms.rdservice");
     } else {
-      resolve(FAILURE, "RD services not available");
+      resolve(FAILURE, "RD services Package not found");
     }
 
     Activity currentActivity = getCurrentActivity();
@@ -131,9 +139,15 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void getFingerPrint(String deviceName, Promise prm) {
-    promise = prm;
-    devicePackageName = deviceName;
-    deviceInfo();
+    try {
+      Log.i("Inside getFingerPrint", "1");
+      promise = prm;
+      PckName = deviceName;
+      deviceInfo();
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "RD services not available");
+    }
   }
 
   private void resolve(String status, String message) {
