@@ -3,6 +3,7 @@
 Reading finger print data using RD services in Android.
 
 RD service supported device :
+
 1. Morpho
 2. Mantra
 3. PB510
@@ -31,12 +32,9 @@ import RdServices from "react-native-rd-services";
 
 RdServices.getFingerPrint("Mantra").then( (result)
     {
-        console.log('result', result);
-        const { status, message } = JSON.parse(result);
+        const { status, message } = result;
         console.log('Status', status);
         console.log('Status', message);
-
-        
     }
 );
 ```

@@ -2,30 +2,29 @@ package com.reactnativerdservices;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
-import com.google.gson.Gson;
 
 @ReactModule(name = RdServicesModule.NAME)
 public class RdServicesModule extends ReactContextBaseJavaModule {
 
   public static final String NAME = "RdServices";
-  public static final int RDInfo = 1;
-  public static final int RDCapture = 2;
+  public static final int RDINFO_CODE = 1;
+  public static final int RDCAPTURE_CODE = 2;
+  private final String SUCCESS = "SUCCESS";
+  private final String FAILURE = "FAILURE";
   private String PckName = "";
   private Promise promise;
-  private String SUCCESS = "SUCCESS";
-  private String FAILURE = "FAILURE";
-  private String CaptureData = "";
 
   private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
     @Override
@@ -40,7 +39,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
         return;
       }
 
-      if (requestCode == RDInfo) {
+      if (requestCode == RDINFO_CODE) {
         String requiredValue = data.getStringExtra("RD_SERVICE_INFO");
 
         if (requiredValue == null) {
@@ -60,18 +59,24 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
         return;
       }
 
-      if (requestCode == RDCapture && !data.equals(null)) {
-        CaptureData = data.getStringExtra("PID_DATA");
+      if (requestCode == RDCAPTURE_CODE) {
 
-        if (CaptureData == null || CaptureData.length() <= 10) {
+        if (data == null) {
           resolve(FAILURE, "Device not ready");
           return;
         }
-        if (CaptureData.toLowerCase().contains("device not ready")) {
+
+        String captureXML = data.getStringExtra("PID_DATA");
+
+        if (captureXML == null || captureXML.length() <= 10) {
           resolve(FAILURE, "Device not ready");
           return;
         }
-        resolve(SUCCESS, CaptureData);
+        if (captureXML.toLowerCase().contains("device not ready")) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        resolve(SUCCESS, captureXML);
       }
     }
   };
@@ -92,9 +97,8 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       intent.setAction("in.gov.uidai.rdservice.fp.INFO");
       Activity currentActivity = getCurrentActivity();
 
-      Log.i("Inside deviceInfo", "1");
 
-      currentActivity.startActivityForResult(intent, RDInfo);
+      currentActivity.startActivityForResult(intent, RDINFO_CODE);
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -109,7 +113,6 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     intent.setAction("in.gov.uidai.rdservice.fp.CAPTURE");
     intent.putExtra("PID_OPTIONS", pidOption);
 
-    Log.i("Inside captureData", "1");
 
     if (PckName.equalsIgnoreCase("com.scl.rdservice")) {
       intent.setPackage("com.scl.rdservice");
@@ -132,15 +135,19 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     }
 
     Activity currentActivity = getCurrentActivity();
-
-    currentActivity.startActivityForResult(intent, RDCapture);
+    try {
+      currentActivity.startActivityForResult(intent, RDCAPTURE_CODE);
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "Selected device not found");
+    }
   }
 
 
   @ReactMethod
   public void getFingerPrint(String deviceName, Promise prm) {
     try {
-      Log.i("Inside getFingerPrint", "1");
+
       promise = prm;
       PckName = deviceName;
       deviceInfo();
@@ -150,19 +157,26 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     }
   }
 
+
+  private String ParseBioMetricData(String bioxml) {
+    bioxml = bioxml.replaceAll("\"", "'");
+    bioxml = bioxml.replaceAll("\\n   ", " ");
+    bioxml = bioxml.replaceAll("\\n ", " ");
+
+    return bioxml;
+  }
+
+
   private void resolve(String status, String message) {
     if (promise == null) {
       return;
     }
-    ResponsePojo responseData = new ResponsePojo();
-    try {
-      responseData.setStatus(status.toUpperCase());
 
-      responseData.setMessage(message);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    promise.resolve(new Gson().toJson(responseData));
+    WritableMap map = Arguments.createMap();
+    map.putString("status", status.toUpperCase());
+    map.putString("message", ParseBioMetricData(message));
+
+    promise.resolve(map);
     promise = null;
   }
 }
