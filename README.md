@@ -28,9 +28,17 @@ yarn add react-native-rd-services
 ```js
 import RdServices from "react-native-rd-services";
 
-// ...
+// ... DeviceType may like package name of RD service example : 
+// com.precision.pb510.rdservice, com.scl.rdservice, com.scl.rdservice, com.secugen.rdservice and so on
 
-RdServices.getFingerPrint("Mantra").then( (result)
+
+
+  let pidOption =
+            "<?xml version='1.0'?><PidOptions ver='1.0'><Opts fCount='1' fType='0' iCount='0' pCount='0' format='0' pidVer='2.0' timeout='10000' posh='UNKNOWN' env='P' /><CustOpts></CustOpts></PidOptions>";
+
+
+
+RdServices.getFingerPrint(DeviceType, pidOption).then( (result)
     {
         const { status, message } = result;
         console.log('Status', status);
