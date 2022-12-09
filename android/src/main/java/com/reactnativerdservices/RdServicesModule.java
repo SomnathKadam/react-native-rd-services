@@ -2,9 +2,7 @@ package com.reactnativerdservices;
 
 import android.app.Activity;
 import android.content.Intent;
-
 import androidx.annotation.NonNull;
-
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -24,6 +22,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
   private final String SUCCESS = "SUCCESS";
   private final String FAILURE = "FAILURE";
   private String PckName = "";
+  private String PIDOption = "";
   private Promise promise;
 
   private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
@@ -60,7 +59,6 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       }
 
       if (requestCode == RDCAPTURE_CODE) {
-
         if (data == null) {
           resolve(FAILURE, "Device not ready");
           return;
@@ -97,9 +95,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       intent.setAction("in.gov.uidai.rdservice.fp.INFO");
       Activity currentActivity = getCurrentActivity();
 
-
       currentActivity.startActivityForResult(intent, RDINFO_CODE);
-
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "RD services not available");
@@ -108,31 +104,16 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
 
   private void captureData() {
     String pidOption =
-      "<?xml version=\"1.0\"?><PidOptions ver=\"1.0\"><Opts fCount=\"1\" fType=\"0\" iCount=\"0\" pCount=\"0\" format=\"0\" pidVer=\"2.0\" timeout=\"10000\" posh=\"UNKNOWN\" env=\"P\" /><CustOpts></CustOpts></PidOptions>";
+      "<?xml version=\"1.0\"?><PidOptions ver=\"1.0\"><Opts fCount=\"1\" fType=\"2\" iCount=\"0\" pCount=\"0\" format=\"0\" pidVer=\"2.0\" timeout=\"10000\" posh=\"UNKNOWN\" env=\"P\" /><CustOpts></CustOpts></PidOptions>";
+
+    if (PIDOption.length() >= 10) {
+      pidOption = PIDOption;
+    }
+
     Intent intent = new Intent();
     intent.setAction("in.gov.uidai.rdservice.fp.CAPTURE");
     intent.putExtra("PID_OPTIONS", pidOption);
-
-
-    if (PckName.equalsIgnoreCase("com.scl.rdservice")) {
-      intent.setPackage("com.scl.rdservice");
-    } else if (PckName.equalsIgnoreCase("com.mantra.rdservice")) {
-      intent.setPackage("com.mantra.rdservice");
-    } else if (
-      PckName.equalsIgnoreCase("com.precision.pb510.rdservice")
-    ) {
-      intent.setPackage("com.precision.pb510.rdservice");
-    } else if (PckName.equalsIgnoreCase("com.secugen.rdservice")) {
-      intent.setPackage("com.secugen.rdservice");
-    } else if (PckName.equalsIgnoreCase("com.acpl.registersdk")) {
-      intent.setPackage("com.acpl.registersdk");
-    } else if (
-      PckName.equalsIgnoreCase("co.aratek.asix_gms.rdservice")
-    ) {
-      intent.setPackage("co.aratek.asix_gms.rdservice");
-    } else {
-      resolve(FAILURE, "RD services Package not found");
-    }
+    intent.setPackage(PckName);
 
     Activity currentActivity = getCurrentActivity();
     try {
@@ -143,20 +124,18 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     }
   }
 
-
   @ReactMethod
-  public void getFingerPrint(String deviceName, Promise prm) {
+  public void getFingerPrint(String deviceName, String pidOption, Promise prm) {
     try {
-
       promise = prm;
       PckName = deviceName;
+      PIDOption = pidOption;
       deviceInfo();
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "RD services not available");
     }
   }
-
 
   private String ParseBioMetricData(String bioxml) {
     bioxml = bioxml.replaceAll("\"", "'");
@@ -165,7 +144,6 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
 
     return bioxml;
   }
-
 
   private void resolve(String status, String message) {
     if (promise == null) {
