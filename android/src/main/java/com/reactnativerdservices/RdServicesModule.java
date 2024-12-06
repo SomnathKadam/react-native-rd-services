@@ -130,7 +130,8 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
       promise = prm;
       PckName = deviceName;
       PIDOption = pidOption;
-      deviceInfo();
+      //deviceInfo();
+      captureData();
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "RD services not available");
