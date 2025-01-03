@@ -19,6 +19,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
   public static final String NAME = "RdServices";
   public static final int RDINFO_CODE = 1;
   public static final int RDCAPTURE_CODE = 2;
+  public static final int FACE_CAPTURE_CODE = 9;
   private final String SUCCESS = "SUCCESS";
   private final String FAILURE = "FAILURE";
   private String PckName = "";
@@ -76,6 +77,26 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
         }
         resolve(SUCCESS, captureXML);
       }
+
+      if (requestCode == FACE_CAPTURE_CODE) {
+        if (data == null) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+
+        String captureXML = data.getStringExtra("response");
+
+        if (captureXML == null || captureXML.length() <= 10) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        if (captureXML.toLowerCase().contains("device not ready")) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        resolve(SUCCESS, captureXML);
+      }
+
     }
   };
 
@@ -89,18 +110,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     return NAME;
   }
 
-  private void deviceInfo() {
-    try {
-      Intent intent = new Intent();
-      intent.setAction("in.gov.uidai.rdservice.fp.INFO");
-      Activity currentActivity = getCurrentActivity();
 
-      currentActivity.startActivityForResult(intent, RDINFO_CODE);
-    } catch (Exception e) {
-      e.printStackTrace();
-      resolve(FAILURE, "RD services not available");
-    }
-  }
 
   private void captureData() {
     String pidOption =
@@ -124,17 +134,51 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     }
   }
 
+  private void captureFaceData() {
+    String pidOption =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <PidOptions ver=\"1.0\" env=\"P\"><Opts fCount=\"\" fType=\"\" iCount=\"\" iType=\"\" pCount=\"\" pType=\"\" format=\"\" pidVer=\"2.0\" timeout=\"\" otp=\"\" wadh=\"sgydIC09zzy6f8Lb3xaAqzKquKe9lFcNR9uTvYxFp+A=\" posh=\"\" /> <CustOpts><Param name=\"txnId\" value=\"76435891\"/><Param name=\"purpose\" value=\"auth\"/><Param name=\"language\" value=\"en\"/></CustOpts></PidOptions>";
+    if (PIDOption.length() >= 10) {
+      pidOption = PIDOption;
+    }
+
+    Intent intent = new Intent();
+    intent.setAction("in.gov.uidai.rdservice.face.CAPTURE");
+    //intent.setPackage("in.gov.uidai.facerd");
+    intent.putExtra("request", pidOption);
+    intent.setPackage(PckName);
+
+    Activity currentActivity = getCurrentActivity();
+    try {
+      currentActivity.startActivityForResult(intent, FACE_CAPTURE_CODE);
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "Selected device not found");
+    }
+  }
+
   @ReactMethod
   public void getFingerPrint(String deviceName, String pidOption, Promise prm) {
     try {
       promise = prm;
       PckName = deviceName;
       PIDOption = pidOption;
-      //deviceInfo();
       captureData();
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "RD services not available");
+    }
+  }
+
+  @ReactMethod
+  public void getFaceCapture(String deviceName, String pidOption, Promise prm) {
+    try {
+      promise = prm;
+      PckName = deviceName;
+      PIDOption = pidOption;
+      captureFaceData();
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "Face RD services not available");
     }
   }
 
