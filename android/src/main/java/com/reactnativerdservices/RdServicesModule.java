@@ -100,18 +100,18 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
 
       if (requestCode == IRIS_CAPTURE_CODE) {
         if (data == null) {
-          resolve(FAILURE, "Iris Device not ready");
+          resolve(FAILURE, "Device not ready");
           return;
         }
 
         String captureXML = data.getStringExtra("PID_DATA");
 
         if (captureXML == null || captureXML.length() <= 10) {
-          resolve(FAILURE, "Iris Device not ready");
+          resolve(FAILURE, "Device not ready");
           return;
         }
         if (captureXML.toLowerCase().contains("device not ready")) {
-          resolve(FAILURE, "Iris Device not ready");
+          resolve(FAILURE, "Device not ready");
           return;
         }
         resolve(SUCCESS, captureXML);
@@ -213,14 +213,18 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     Intent intent = new Intent();
     intent.setAction("in.gov.uidai.rdservice.iris.CAPTURE");
     intent.putExtra("PID_OPTIONS", pidOption);
-    intent.setPackage(PckName);
+    // Only restrict to a specific package if one was explicitly provided.
+    // When empty, Android auto-routes to whichever iris RD service is installed.
+    if (PckName != null && !PckName.isEmpty()) {
+      intent.setPackage(PckName);
+    }
 
     Activity currentActivity = getCurrentActivity();
     try {
       currentActivity.startActivityForResult(intent, IRIS_CAPTURE_CODE);
     } catch (Exception e) {
       e.printStackTrace();
-      resolve(FAILURE, "Selected iris device not found");
+      resolve(FAILURE, "Iris RD service app not found. Please install the Mantra iris RD service.");
     }
   }
 
