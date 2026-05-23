@@ -20,6 +20,7 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
   public static final int RDINFO_CODE = 1;
   public static final int RDCAPTURE_CODE = 2;
   public static final int FACE_CAPTURE_CODE = 9;
+  public static final int IRIS_CAPTURE_CODE = 3;
   private final String SUCCESS = "SUCCESS";
   private final String FAILURE = "FAILURE";
   private String PckName = "";
@@ -85,6 +86,25 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
         }
 
         String captureXML = data.getStringExtra("response");
+
+        if (captureXML == null || captureXML.length() <= 10) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        if (captureXML.toLowerCase().contains("device not ready")) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+        resolve(SUCCESS, captureXML);
+      }
+
+      if (requestCode == IRIS_CAPTURE_CODE) {
+        if (data == null) {
+          resolve(FAILURE, "Device not ready");
+          return;
+        }
+
+        String captureXML = data.getStringExtra("PID_DATA");
 
         if (captureXML == null || captureXML.length() <= 10) {
           resolve(FAILURE, "Device not ready");
@@ -179,6 +199,45 @@ public class RdServicesModule extends ReactContextBaseJavaModule {
     } catch (Exception e) {
       e.printStackTrace();
       resolve(FAILURE, "Face RD services not available");
+    }
+  }
+
+  private void captureIrisData() {
+    String pidOption =
+      "<?xml version='1.0'?><PidOptions ver='1.0'><Opts fCount='0' fType='0' iCount='1' iType='0' indicatorforUID='0' pCount='0' pType='0' format='0' pidVer='2.0' env='P' timeout='15000' otp='' wadh='' posh='UNKNOWN'/><Demo></Demo><CustOpts><Param name='' value=''/></CustOpts></PidOptions>";
+
+    if (PIDOption.length() >= 10) {
+      pidOption = PIDOption;
+    }
+
+    Intent intent = new Intent();
+    intent.setAction("in.gov.uidai.rdservice.iris.CAPTURE");
+    intent.putExtra("PID_OPTIONS", pidOption);
+    // Only restrict to a specific package if one was explicitly provided.
+    // When empty, Android auto-routes to whichever iris RD service is installed.
+    if (PckName != null && !PckName.isEmpty()) {
+      intent.setPackage(PckName);
+    }
+
+    Activity currentActivity = getCurrentActivity();
+    try {
+      currentActivity.startActivityForResult(intent, IRIS_CAPTURE_CODE);
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "Iris RD service app not found. Please install the Mantra iris RD service.");
+    }
+  }
+
+  @ReactMethod
+  public void getIrisCapture(String deviceName, String pidOption, Promise prm) {
+    try {
+      promise = prm;
+      PckName = deviceName;
+      PIDOption = pidOption;
+      captureIrisData();
+    } catch (Exception e) {
+      e.printStackTrace();
+      resolve(FAILURE, "Iris RD services not available");
     }
   }
 
